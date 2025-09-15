@@ -8,11 +8,11 @@ from pathlib import Path
 REGION = os.getenv("AWS_REGION", os.getenv("REGION", "us-east-1"))
 SUPERVISOR_AGENT_ID = os.getenv("SUPERVISOR_AGENT_ID", "")
 SUPERVISOR_ALIAS_ID = os.getenv("SUPERVISOR_ALIAS_ID", "")
-GUSTAVO_AGENT_ID = os.getenv("GUSTAVO_AGENT_ID", "")
+GUSTAVO_AGENT_ID = "6S9FJMQF7B"
 GUSTAVO_ALIAS_ID = os.getenv("GUSTAVO_ALIAS_ID", "")
-MAYA_AGENT_ID = os.getenv("MAYA_AGENT_ID", "")
+MAYA_AGENT_ID = "DSNQSVFD3N"
 MAYA_ALIAS_ID = os.getenv("MAYA_ALIAS_ID", "")
-CAROLINE_AGENT_ID = os.getenv("CAROLINE_AGENT_ID", "")
+CAROLINE_AGENT_ID = "KHOXBCC9II"
 CAROLINE_ALIAS_ID = os.getenv("CAROLINE_ALIAS_ID", "")
 
 runtime = boto3.client("bedrock-agent-runtime", region_name=REGION)
@@ -36,7 +36,7 @@ def _read_text_file(path: Path) -> str:
 def load_oficina_and_personas(base_dir: str = "agents_description"):
 	base = Path(base_dir)
 	personas = {}
-\toficina_text = ""
+	oficina_text = ""
 	if not base.exists():
 		return oficina_text, personas
 
@@ -66,10 +66,7 @@ st.title("🧩 Jigsaw Room")
 with st.sidebar:
 	st.subheader("Configuration")
 	st.text_input("AWS Region", key="cfg_region", value=REGION)
-	st.markdown("**Supervisor Agent**")
-	st.text_input("Supervisor Agent ID", key="cfg_agent", value=SUPERVISOR_AGENT_ID)
-	st.text_input("Supervisor Alias ID", key="cfg_alias", value=SUPERVISOR_ALIAS_ID)
-	st.markdown("**Direct Agents (optional)**")
+	st.markdown("**Agents**")
 	st.text_input("Gustavo Agent ID", key="gustavo_agent", value=GUSTAVO_AGENT_ID)
 	st.text_input("Gustavo Alias ID", key="gustavo_alias", value=GUSTAVO_ALIAS_ID)
 	st.text_input("Maya Agent ID", key="maya_agent", value=MAYA_AGENT_ID)
@@ -85,15 +82,15 @@ with st.sidebar:
 	agents_info = {
 		"gustavo": {
 			"label": "Gustavo",
-			"description": "Senior Software Engineer",
-			"specialties": "Logic, ciphers, code-breaking, step-by-step analysis",
+			"description": "Agente jurídico (Direito)",
+			"specialties": "Análise legal, interpretação de normas, raciocínio lógico",
 			"color": "🔧",
 			"persona_key": "gustavo",
 		},
 		"maya": {
 			"label": "Maya",
-			"description": "Psychologist", 
-			"specialties": "Social cues, people puzzles, behavioral analysis",
+			"description": "Engenheira de Software Sênior", 
+			"specialties": "Lógica, cifras, quebra de códigos, passo-a-passo",
 			"color": "🧠",
 			"persona_key": "maya",
 		},
@@ -214,20 +211,12 @@ if prompt:
 	with st.chat_message("user"):
 		st.markdown(prompt)
 
-	# Build dynamic instruction based on selected agents (context for supervisor)
-	selected_agents = st.session_state.get("selected_agents", [])
-	agent_context = ""
-	if target == "Supervisor" and selected_agents:
-		agent_context = f"\n\nAvailable team members: {', '.join(selected_agents)}. Collaborate with them as needed."
-
-	enhanced_prompt = prompt + agent_context
+	# Send exactly the user's prompt (agents already contain their instructions and KBs)
+	enhanced_prompt = prompt
 
 	# Invoke Bedrock Agent (non-streaming)
 	try:
-		if target == "Supervisor":
-			agent_id = st.session_state.get("cfg_agent") or SUPERVISOR_AGENT_ID
-			alias_id = st.session_state.get("cfg_alias") or SUPERVISOR_ALIAS_ID
-		elif target == "Gustavo":
+		if target == "Gustavo":
 			agent_id = st.session_state.get("gustavo_agent") or GUSTAVO_AGENT_ID
 			alias_id = st.session_state.get("gustavo_alias") or GUSTAVO_ALIAS_ID
 		elif target == "Maya":
