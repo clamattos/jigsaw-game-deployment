@@ -5,6 +5,8 @@ import streamlit as st
 import json
 from pathlib import Path
 
+st.set_page_config(page_title="Jigsaw Room", page_icon="🧩", layout="centered")
+
 REGION = os.getenv("AWS_REGION", os.getenv("REGION", "us-east-1"))
 SUPERVISOR_AGENT_ID = os.getenv("SUPERVISOR_AGENT_ID", "")
 SUPERVISOR_ALIAS_ID = os.getenv("SUPERVISOR_ALIAS_ID", "")
@@ -60,7 +62,6 @@ def load_oficina_and_personas(base_dir: str = "agents_description"):
 challenges = load_challenges()
 oficina_text, personas = load_oficina_and_personas()
 
-st.set_page_config(page_title="Jigsaw Room", page_icon="🧩", layout="centered")
 st.title("🧩 Jigsaw Room")
 
 with st.sidebar:
