@@ -113,7 +113,7 @@ with st.sidebar:
 		col1, col2 = st.columns([1, 4])
 		with col1:
 			selected = st.checkbox(
-				"", 
+				f"Agent {info['label']}", 
 				value=info["label"] in st.session_state.selected_agents,
 				key=f"agent_{key}",
 				label_visibility="collapsed"
@@ -205,8 +205,8 @@ if "selected_challenge" in st.session_state:
 
 col_role, col_placeholder = st.columns([1, 3])
 with col_role:
-	target = st.selectbox("Target", ["Supervisor", "Gustavo", "Maya", "Dra. Caroline"], index=0)
-prompt = st.chat_input("Describe the puzzle…", value=default_prompt)
+	target = st.selectbox("Target", ["Gustavo", "Maya", "Dra. Caroline"], index=0)
+prompt = st.chat_input("Describe the puzzle…")
 if prompt:
 	st.session_state.messages.append(("user", prompt))
 	with st.chat_message("user"):
