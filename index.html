@@ -1,0 +1,42 @@
+<!-- file: index.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Jigsaw Room</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 24px auto; }
+    .bubble{ padding:12px 14px; border-radius:14px; margin:8px 0; max-width: 90%;}
+    .me{ background:#efefef; align-self:flex-end;}
+    .bot{ background:#e8f3ff;}
+    #log{ display:flex; flex-direction:column;}
+    #box{ display:flex; gap:8px; margin-top:12px;}
+    textarea{ flex:1; min-height:60px;}
+    button{ padding:10px 14px; }
+  </style>
+</head>
+<body>
+  <h1>🧩 Jigsaw Room</h1>
+  <div id="log"></div>
+  <div id="box">
+    <textarea id="msg" placeholder="Describe the puzzle…"></textarea>
+    <button id="send">Send</button>
+  </div>
+  <script>
+    let sessionId = null;
+    const log = document.getElementById('log');
+    function addBubble(text, cls){ const d=document.createElement('div');
+      d.className='bubble '+cls; d.textContent=text; log.appendChild(d); window.scrollTo(0,document.body.scrollHeight); }
+    async function send(){
+      const t = document.getElementById('msg').value.trim(); if(!t) return;
+      addBubble(t,'me'); document.getElementById('msg').value='';
+      const res = await fetch('/chat',{method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ message: t, session_id: sessionId })});
+      const data = await res.json(); sessionId = data.session_id; addBubble(data.reply, 'bot');
+    }
+    document.getElementById('send').onclick = send;
+    document.getElementById('msg').addEventListener('keydown', e=>{ if(e.key==='Enter' && (e.metaKey||e.ctrlKey)) send(); });
+  </script>
+</body>
+</html>

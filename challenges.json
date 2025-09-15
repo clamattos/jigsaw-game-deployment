@@ -1,0 +1,76 @@
+{
+  "challenges": [
+    {
+      "id": "logic_001",
+      "title": "The Locked Box",
+      "category": "Logic",
+      "difficulty": "Easy",
+      "description": "I found a locked box with a 4-digit code. There's a note that says: 'The code is the year when the first computer bug was found, but subtract 1000.' What's the code?",
+      "hint": "The first computer bug was found in 1947. It was an actual moth trapped in a relay.",
+      "expected_answer": "947"
+    },
+    {
+      "id": "social_001", 
+      "title": "The Truth Tellers",
+      "category": "Social",
+      "difficulty": "Medium",
+      "description": "Three people are in a room: Alice, Bob, and Charlie. One always tells the truth, one always lies, and one sometimes tells the truth. Alice says 'Bob is the liar.' Bob says 'Charlie is the truth-teller.' Charlie says 'Alice is the liar.' Who is who?",
+      "hint": "Start by assuming one person is the truth-teller and see if it creates contradictions.",
+      "expected_answer": "Alice: sometimes truthful, Bob: liar, Charlie: truth-teller"
+    },
+    {
+      "id": "spatial_001",
+      "title": "Magic Square",
+      "category": "Spatial", 
+      "difficulty": "Hard",
+      "description": "I have a 3x3 grid with numbers 1-9. Each row, column, and diagonal must sum to 15. The center is 5, and the corners are even numbers. What's the arrangement?",
+      "hint": "The magic constant for a 3x3 square is 15. Place 5 in the center first.",
+      "expected_answer": "8 1 6 / 3 5 7 / 4 9 2"
+    },
+    {
+      "id": "cipher_001",
+      "title": "Caesar's Message",
+      "category": "Logic",
+      "difficulty": "Easy", 
+      "description": "I intercepted this message: 'WKH TXLFN EURZQ IRA MXPSV RYHU WKH ODCB GRJ.' It's a Caesar cipher. What does it say?",
+      "hint": "Caesar cipher shifts each letter by a fixed number. Try shifting by 3 positions.",
+      "expected_answer": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG"
+    },
+    {
+      "id": "social_002",
+      "title": "The Poisoned Wine",
+      "category": "Social",
+      "difficulty": "Hard",
+      "description": "A king has 1000 bottles of wine. One is poisoned. You have 10 prisoners to test the wine. How can you identify the poisoned bottle in one day?",
+      "hint": "Think about binary representation. Each prisoner can represent a bit position.",
+      "expected_answer": "Use binary system - each prisoner tests bottles where their bit position is 1"
+    },
+    {
+      "id": "spatial_002", 
+      "title": "The Missing Piece",
+      "category": "Spatial",
+      "difficulty": "Medium",
+      "description": "I have a puzzle with 8 pieces that form a 3x3 grid with one empty space. The pieces are numbered 1-8. How many moves does it take to arrange them in order with the empty space in the bottom-right?",
+      "hint": "This is like the 15-puzzle. Count inversions to determine if it's solvable.",
+      "expected_answer": "Depends on starting position, but typically 20-30 moves"
+    },
+    {
+      "id": "logic_002",
+      "title": "The Bridge Crossing",
+      "category": "Logic", 
+      "difficulty": "Medium",
+      "description": "Four people need to cross a bridge at night. They have one flashlight. Person A takes 1 minute, B takes 2 minutes, C takes 5 minutes, D takes 10 minutes. Only two people can cross at once, and they move at the slower person's pace. What's the minimum time?",
+      "hint": "The fastest people should be the 'runners' who bring the flashlight back.",
+      "expected_answer": "17 minutes"
+    },
+    {
+      "id": "cipher_002",
+      "title": "The Substitution Cipher",
+      "category": "Logic",
+      "difficulty": "Hard",
+      "description": "Decode this message: 'QEB NRFZH YOLTK CLU GRJMP LSBO QEB IXWV ALD.' It's a substitution cipher where each letter is replaced by another letter.",
+      "hint": "Look for common patterns like 'THE' or single-letter words.",
+      "expected_answer": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+aula_quimica_laboratorial
+
+Aula de Química Laboratorial
+
+Os elementos disponíveis para mistura nessa aula estão em frascos com as seguintes descrições e cores:
+
+AC = Azul Claro  
+A  = Amarelo  
+V  = Vermelho  
+I  = Incolor  
+VL = Verde Limão
+
+A combinação de 3 elementos pode gerar diversas reações químicas, com resultados positivos ou negativos. Vamos à listagem:
+
+AC - V - VL = um veneno potente, capaz de neutralizar animais de grande porte, como elefantes.  
+VL - A - V = um elemento capaz de neutralizar qualquer tipo de agente tóxico conhecido.  
+V - I - A = um elemento capaz de retirar a ferrugem de materiais como barras de ferro, peças de carro e similares.  
+A - VL - AC = um agente alucinógeno moderado com duração de 6 horas.  
+V - V - V = reação instável: risco de explosão imediata.  
+I - VL - AC = solução limpante com leve efeito corrosivo em superfícies orgânicas.  
+VL - I - A = fórmula que induz sono profundo por 12 horas.  
+AC - A - V = composto levemente radioativo, deve ser descartado com proteção.  
+I - V - VL = reação viscosa que solidifica rapidamente.  
+V - AC - A = substância irritante para olhos e pele.  
+VL - VL - VL = neutralizador de odores altamente eficaz.  
+A - I - V = mistura que reduz febre e age como analgésico.  
+AC - A - I = antibiótico de largo espectro com baixa toxicidade.  
+V - VL - I = elemento antifúngico utilizado em ambientes úmidos.  
+A - A - A = substância inerte, sem efeitos detectáveis.  
+I - I - I = resultado volátil: evapora antes de agir.  
+AC - AC - AC = substância hidratante usada em cosméticos naturais.  
+V - VL - AC = estimulante cardíaco altamente perigoso.  
+A - V - A = agente colérico: pode causar irritabilidade extrema.  
+VL - AC - V = solução que causa paralisia muscular temporária.  
+VL - V - I = substância que induz vômitos violentos.  
+A - VL - I = anestésico de aplicação tópica.  
+I - A - AC = solução oftálmica que clareia temporariamente a visão.  
+VL - I - AC = ativador enzimático para tecidos mortos.  
+V - A - VL = mistura que acelera cicatrização de feridas abertas.  
+A - V - AC = composto antisséptico para uso externo.  
+AC - VL - I = substância com propriedades antialérgicas.  
+AC - I - V = mistura instável que congela à temperatura ambiente.  
+VL - A - I = líquido que altera a coloração da pele por 24h.  
+I - VL - V = sedativo leve usado para contenção de animais.  
+A - AC - VL = fórmula que causa leve amnésia.  
+AC - V - I = substância que repele insetos agressivos.  
+V - AC - I = solução que reage com metais enferrujados e os fortalece.  
+I - A - VL = fluido de limpeza usado em superfícies delicadas.  
+V - VL - VL = mistura que libera gás tóxico em ambientes fechados.  
+A - VL - V = antídoto parcial para compostos paralisantes.  
+VL - V - A = substância que aquece rapidamente ao contato com oxigênio.  
+AC - A - VL = resina de colagem rápida.  
+I - V - AC = solução usada em descontaminação radioativa.  
+V - A - AC = substância que causa coceira intensa e persistente.  
+VL - AC - A = emulsão cicatrizante com efeito anti-inflamatório.  
+VL - I - V = líquido sonífero com efeito lento e progressivo.  
+A - V - I = composto que deixa a pele esverdeada por 48 horas.  
+V - A - I = fluido que lubrifica engrenagens antigas com precisão.  
+AC - VL - V = reagente usado em testes laboratoriais de DNA.  
+A - AC - I = neutralizante de odores corporais.  
+I - AC - V = spray antiviral de curta duração.  
+AC - VL - A = agente que bloqueia receptores de dor por até 2 horas.  
+VL - AC - I = solução usada para preservar amostras biológicas.  
+
+###
