@@ -227,8 +227,12 @@ if prompt:
 			agent_id = st.session_state.get("caroline_agent") or CAROLINE_AGENT_ID
 			alias_id = st.session_state.get("caroline_alias") or CAROLINE_ALIAS_ID
 
-		if not agent_id or not alias_id:
-			raise RuntimeError(f"Missing Agent ID/Alias for target: {target}")
+		if not agent_id:
+			raise RuntimeError(f"Missing Agent ID for target: {target}")
+
+		# Use agent ID directly if no alias provided
+		if not alias_id:
+			alias_id = "TSTALIASID"  # Default alias for agents without custom aliases
 
 		resp = runtime.invoke_agent(
 			agentId=agent_id,
