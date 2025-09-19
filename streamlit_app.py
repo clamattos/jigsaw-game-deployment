@@ -155,10 +155,8 @@ challenge_keys_ui = [e["title"] for e in respostas_entries]
 
 st.title("🧩 Jigsaw Room")
 
-# Main layout: sidebar with everything, main area with chat only
-main_col, sidebar_col = st.columns([3, 1])
-
-with sidebar_col:
+# Use the native sidebar for left panel
+with st.sidebar:
 	st.subheader("Configuration")
 	st.text_input("AWS Region", key="cfg_region", value=REGION)
 	st.markdown("**Agents**")
@@ -308,78 +306,77 @@ if "messages" not in st.session_state:
 if not challenge_keys_ui:
     st.info("Nenhum desafio encontrado em respostas.txt. Verifique os títulos ('### DESAFIO N — ...').")
 
-# Main chat area
-with main_col:
-    # Display chat messages
-    for role, content in st.session_state.messages:
-        with st.chat_message(role):
-            st.markdown(content)
+# Main chat area - display messages
+for role, content in st.session_state.messages:
+    with st.chat_message(role):
+        st.markdown(content)
 
-    # Character selection and chat input
-    col_role, _ = st.columns([1, 3])
-    with col_role:
-        target = st.selectbox("Personagem", ["Gustavo", "Maya", "Dra. Caroline"], index=0)
+# Character selection
+col_role, _ = st.columns([1, 3])
+with col_role:
+    target = st.selectbox("Personagem", ["Gustavo", "Maya", "Dra. Caroline"], index=0)
 
-    prompt = st.chat_input("Escreva sua pergunta / resposta…")
-    if prompt:
-        st.session_state.messages.append(("user", prompt))
-        with st.chat_message("user"):
-            st.markdown(prompt)
+# Chat input at the bottom
+prompt = st.chat_input("Escreva sua pergunta / resposta…")
+if prompt:
+    st.session_state.messages.append(("user", prompt))
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-        # Build final prompt: selected challenge text plus user's message
-        base_text = ""
-        if "selected_challenge" in st.session_state:
-            base_text = st.session_state.selected_challenge.get("description", "")
-        enhanced_prompt = (base_text + "\n\nPergunta do jogador: " + prompt).strip()
+    # Build final prompt: selected challenge text plus user's message
+    base_text = ""
+    if "selected_challenge" in st.session_state:
+        base_text = st.session_state.selected_challenge.get("description", "")
+    enhanced_prompt = (base_text + "\n\nPergunta do jogador: " + prompt).strip()
 
-        # Invoke Bedrock Agent (non-streaming)
-        try:
-            if target == "Gustavo":
-                agent_id = st.session_state.get("gustavo_agent") or GUSTAVO_AGENT_ID
-                alias_id = st.session_state.get("gustavo_alias") or GUSTAVO_ALIAS_ID
-            elif target == "Maya":
-                agent_id = st.session_state.get("maya_agent") or MAYA_AGENT_ID
-                alias_id = st.session_state.get("maya_alias") or MAYA_ALIAS_ID
+    # Invoke Bedrock Agent (non-streaming)
+    try:
+        if target == "Gustavo":
+            agent_id = st.session_state.get("gustavo_agent") or GUSTAVO_AGENT_ID
+            alias_id = st.session_state.get("gustavo_alias") or GUSTAVO_ALIAS_ID
+        elif target == "Maya":
+            agent_id = st.session_state.get("maya_agent") or MAYA_AGENT_ID
+            alias_id = st.session_state.get("maya_alias") or MAYA_ALIAS_ID
+        else:
+            agent_id = st.session_state.get("caroline_agent") or CAROLINE_AGENT_ID
+            alias_id = st.session_state.get("caroline_alias") or CAROLINE_ALIAS_ID
+
+        if not agent_id:
+            raise RuntimeError(f"Missing Agent ID for target: {target}")
+
+        # Use agent ID directly if no alias provided
+        if not alias_id:
+            alias_id = "TSTALIASID"  # Default alias for agents without custom aliases
+
+        resp = runtime.invoke_agent(
+            agentId=agent_id,
+            agentAliasId=alias_id,
+            sessionId=st.session_state.session_id,
+            inputText=enhanced_prompt,
+        )
+        chunks = []
+        for chunk in resp.get("completion", []):
+            if "chunk" in chunk and "bytes" in chunk["chunk"]:
+                chunks.append(chunk["chunk"]["bytes"].decode("utf-8"))
+        reply = "".join(chunks) if chunks else "(no reply)"
+    except Exception as e:
+        reply = f"Error: {e}"
+
+    # Validate against respostas.txt if a known challenge is selected
+    veredito = None
+    if "selected_challenge" in st.session_state:
+        challenge_title = st.session_state.selected_challenge.get("title", "")
+        gabarito = respostas.get(normalize_challenge_key(challenge_title))
+        if gabarito:
+            # normalize both strings (remove spaces/newlines/markdown)
+            def norm(s: str) -> str:
+                return re.sub(r"\s+", "", s or "").strip().lower()
+            if norm(reply).find(norm(gabarito)) != -1 or norm(reply) == norm(gabarito):
+                veredito = "✅ Resposta correta!"
             else:
-                agent_id = st.session_state.get("caroline_agent") or CAROLINE_AGENT_ID
-                alias_id = st.session_state.get("caroline_alias") or CAROLINE_ALIAS_ID
+                veredito = f"❌ Resposta incorreta."
 
-            if not agent_id:
-                raise RuntimeError(f"Missing Agent ID for target: {target}")
-
-            # Use agent ID directly if no alias provided
-            if not alias_id:
-                alias_id = "TSTALIASID"  # Default alias for agents without custom aliases
-
-            resp = runtime.invoke_agent(
-                agentId=agent_id,
-                agentAliasId=alias_id,
-                sessionId=st.session_state.session_id,
-                inputText=enhanced_prompt,
-            )
-            chunks = []
-            for chunk in resp.get("completion", []):
-                if "chunk" in chunk and "bytes" in chunk["chunk"]:
-                    chunks.append(chunk["chunk"]["bytes"].decode("utf-8"))
-            reply = "".join(chunks) if chunks else "(no reply)"
-        except Exception as e:
-            reply = f"Error: {e}"
-
-        # Validate against respostas.txt if a known challenge is selected
-        veredito = None
-        if "selected_challenge" in st.session_state:
-            challenge_title = st.session_state.selected_challenge.get("title", "")
-            gabarito = respostas.get(normalize_challenge_key(challenge_title))
-            if gabarito:
-                # normalize both strings (remove spaces/newlines/markdown)
-                def norm(s: str) -> str:
-                    return re.sub(r"\s+", "", s or "").strip().lower()
-                if norm(reply).find(norm(gabarito)) != -1 or norm(reply) == norm(gabarito):
-                    veredito = "✅ Resposta correta!"
-                else:
-                    veredito = f"❌ Resposta incorreta."
-
-        final_block = reply if veredito is None else (reply + "\n\n" + veredito)
-        st.session_state.messages.append(("assistant", final_block))
-        with st.chat_message("assistant"):
-            st.markdown(final_block)
+    final_block = reply if veredito is None else (reply + "\n\n" + veredito)
+    st.session_state.messages.append(("assistant", final_block))
+    with st.chat_message("assistant"):
+        st.markdown(final_block)
