@@ -1,11 +1,48 @@
-🎯 DESAFIOS INTERATIVOS
+DESAFIOS INTERATIVOS
 
-### 🎂 DESAFIO 1 — BOLO DE MADEIRA COM CADEADO
+### DESAFIO 1 — BOLO DE MADEIRA COM CADEADO
+
+**Local:** Mesa de aço no centro da sala  
+**Descrição:**
+- Um **bolo de aniversário falso**, esculpido em madeira, decorado com glacê pintado e velas fixas.
+- Na base, um **cadeado numérico de 8 dígitos** e um painel com luzes **vermelha e verde** (apagadas inicialmente).
+
+**Pistas visíveis:**
+- 🧾 **Bilhete rasgado**, colado debaixo da mesa:
+  > "Ele nasceu no mesmo dia que você, e é tão novo quanto você..."
+
+- 🧻 **Guardanapo com batom** e nome “VILAS” escrito à mão.
+- Rabisco na mesa: "061983"
+- Rabisco lateral na mesa: “ddmmaaaa”
 
 **Resposta:** 19790312
 
 ---
 
-### 🧪 DESAFIO 2 — LABORATÓRIO SELADO
+### DESAFIO 2 — LABORATÓRIO SELADO
 
+**Local:** Sala de preparo, bancada central com instrumentos de vidro
+**Descrição:**
+- **7 frascos de vidro**, numerados de 1 a 7, cada um com líquido de cor e viscosidade distinta.
+- Dispositivo com **3 entradas para tubos**. Um visor digital e um aviso:  
+  > ⚠️ “Combinação errada ativa liberação de gás. Apenas a cura liberta.”
+
+**Frascos:**
+1. Azul fosforescente  
+2. Verde opaco  
+3. Amarelo vívido  
+4. Vermelho escuro  
+5. Incolor  
+6. Laranja com sedimentos  
+7. Roxo metálico  
+
+**Pistas visíveis:**
+- 📚 **Livro de farmacologia** aberto na página 237:
+  > “Azul fosforescente reage com incolor apenas na presença de viscosidade média amarela.”  
+  > “Evite sedimentos metálicos — efeito imprevisível.”
+
+- 🔐 **Gaveta trancada** (abre com uma chave):
+  - Tabela manuscrita com proporções:  
+    > “? + ? + ? → resultado verde claro e liberação da trava.”
+    
 **Resposta:** 1 - 3 - 5

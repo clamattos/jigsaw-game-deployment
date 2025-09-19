@@ -28,7 +28,7 @@ Eles ouvem sua voz pelas caixas de som e sabem que você é um aliado externo �
 
 🎯 DESAFIOS INTERATIVOS
 
-### 🎂 DESAFIO 1 — BOLO DE MADEIRA COM CADEADO
+### DESAFIO 1 — BOLO DE MADEIRA COM CADEADO
 
 **Local:** Mesa de aço no centro da sala  
 **Descrição:**
@@ -45,7 +45,7 @@ Eles ouvem sua voz pelas caixas de som e sabem que você é um aliado externo �
 
 ---
 
-### 🧪 DESAFIO 2 — LABORATÓRIO SELADO
+### DESAFIO 2 — LABORATÓRIO SELADO
 
 **Local:** Sala de preparo, bancada central com instrumentos de vidro
 **Descrição:**

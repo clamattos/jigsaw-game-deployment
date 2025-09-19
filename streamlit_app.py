@@ -119,6 +119,40 @@ def load_respostas(path: str = "respostas.txt"):
 
 respostas = load_respostas()
 
+# New: parse respostas.txt into full entries (title, description, answer)
+@st.cache_data
+def load_respostas_entries(path: str = "respostas.txt"):
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+        entries = []
+        current_title = None
+        buf = []
+        answer = ""
+        heading_re = re.compile(r"^\s*#{2,6}\s+.*DESAFIO\s+\d+\s+[—\-–]\s+.*$", re.IGNORECASE)
+        for ln in text.splitlines():
+            ls = ln.strip()
+            if heading_re.match(ls):
+                if current_title is not None:
+                    desc = "\n".join([x for x in buf if not x.strip().lower().startswith("**resposta:**")]).strip()
+                    entries.append({"title": current_title, "description": desc, "answer": answer})
+                    buf = []
+                    answer = ""
+                current_title = ls
+            else:
+                buf.append(ln)
+                if ls.lower().startswith("**resposta:**"):
+                    answer = ls.split("**Resposta:**", 1)[1].strip().strip("* ")
+        if current_title is not None:
+            desc = "\n".join([x for x in buf if not x.strip().lower().startswith("**resposta:**")]).strip()
+            entries.append({"title": current_title, "description": desc, "answer": answer})
+        return entries
+    except Exception:
+        return []
+
+respostas_entries = load_respostas_entries()
+respostas_map = {normalize_challenge_key(e["title"]): e for e in respostas_entries}
+challenge_keys_ui = [e["title"] for e in respostas_entries]
+
 st.title("🧩 Jigsaw Room")
 
 
@@ -197,7 +231,21 @@ with st.sidebar:
 		st.warning("⚠️ Select at least one agent!")
 	
 	st.divider()
-	# Challenge selection moved next to target selector in main area
+	st.subheader("🎯 Desafios (de respostas.txt)")
+	selected_challenge_key = st.selectbox("Desafio", ["(texto livre)"] + challenge_keys_ui)
+	if selected_challenge_key != "(texto livre)":
+		entry = respostas_map.get(normalize_challenge_key(selected_challenge_key))
+		st.session_state.selected_challenge = {
+			"title": selected_challenge_key,
+			"category": "oficina",
+			"difficulty": "n/a",
+			"description": (entry or {}).get("description", ""),
+			"answer": (entry or {}).get("answer", ""),
+		}
+		if ("challenge_announced" not in st.session_state) or (st.session_state.get("announced_key") != selected_challenge_key):
+			st.session_state.messages.append(("assistant", f"### Desafio selecionado\n\n{selected_challenge_key}\n\n{st.session_state.selected_challenge['description']}"))
+			st.session_state.challenge_announced = True
+			st.session_state.announced_key = selected_challenge_key
 
 	st.divider()
 	st.subheader("📚 Extra Challenges (optional)")
@@ -229,41 +277,19 @@ if "session_id" not in st.session_state:
 if "messages" not in st.session_state:
 	st.session_state.messages = []  # list of (role, content)
 
-# Show selected challenge info
-if "selected_challenge" in st.session_state:
-	challenge = st.session_state.selected_challenge
-	with st.expander(f"🎯 Current Challenge: {challenge['title']}", expanded=True):
-		st.write(f"**Category:** {challenge['category']} | **Difficulty:** {challenge['difficulty']}")
-		st.write(f"**Description:** {challenge['description']}")
-		if st.button("Clear Challenge"):
-			del st.session_state.selected_challenge
-			st.rerun()
+# No details panel here anymore; challenge description is posted in chat when selected
 
 for role, content in st.session_state.messages:
 	with st.chat_message(role):
 		st.markdown(content)
 
-# Show an info if we parsed zero challenges
-if not challenge_keys:
-	st.info("Nenhum desafio detectado no arquivo de oficina. Verifique se os títulos começam com '###' e contêm 'DESAFIO N — ...'.")
+# Show an info if we parsed zero challenges from respostas.txt
+if not challenge_keys_ui:
+    st.info("Nenhum desafio encontrado em respostas.txt. Verifique os títulos ('### DESAFIO N — ...').")
 
-col_role, col_chal = st.columns([1, 3])
+col_role, _ = st.columns([1, 3])
 with col_role:
 	target = st.selectbox("Personagem", ["Gustavo", "Maya", "Dra. Caroline"], index=0)
-with col_chal:
-	selected_challenge_key = st.selectbox("Desafio", ["(texto livre)"] + challenge_keys)
-	if selected_challenge_key != "(texto livre)":
-		st.session_state.selected_challenge = {
-			"title": selected_challenge_key,
-			"category": "oficina",
-			"difficulty": "n/a",
-			"description": challenge_texts.get(selected_challenge_key, ""),
-		}
-		# Show the challenge as a message in chat area
-		if ("challenge_announced" not in st.session_state) or (st.session_state.get("announced_key") != selected_challenge_key):
-			st.session_state.messages.append(("assistant", f"### Desafio selecionado\n\n{selected_challenge_key}\n\n{challenge_texts.get(selected_challenge_key, '')}"))
-			st.session_state.challenge_announced = True
-			st.session_state.announced_key = selected_challenge_key
 
 prompt = st.chat_input("Escreva sua pergunta / resposta…")
 if prompt:
