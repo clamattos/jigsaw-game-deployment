@@ -356,4 +356,29 @@ if prompt:
 		st.markdown(final_block)
 
 st.markdown("---")
-st.caption("Tip: Select which agents to include in the sidebar. Configure your supervisor agent and alias there too. Your session is preserved until refresh.")
+
+# Manual answer attempt section
+st.subheader("🎯 Tentar Resposta")
+attempt = st.text_input("Digite sua resposta final:", key="attempt_text", placeholder="Ex: 19790312 ou 1-3-5")
+col1, col2 = st.columns([1, 4])
+with col1:
+    if st.button("Verificar Resposta", type="primary"):
+        if "selected_challenge" in st.session_state:
+            entry = respostas_map.get(normalize_challenge_key(st.session_state.selected_challenge.get("title", "")))
+            correct = (entry or {}).get("answer") if entry else None
+            if not correct:
+                st.warning("⚠️ Nenhum gabarito encontrado para o desafio selecionado.")
+            else:
+                def norm(s: str) -> str:
+                    return re.sub(r"\s+", "", s or "").strip().lower()
+                if norm(attempt) == norm(correct):
+                    st.success("✅ **Resposta correta!** Parabéns!")
+                    st.balloons()
+                else:
+                    st.error(f"❌ **Resposta incorreta.** A resposta correta é: `{correct}`")
+        else:
+            st.warning("⚠️ Selecione um desafio primeiro.")
+with col2:
+    st.caption("Digite sua resposta e clique em 'Verificar Resposta' para saber se está correto.")
+
+st.caption("💡 **Dica:** Selecione o personagem e o desafio na barra lateral. O centro exibe apenas o chat e resultado.")
