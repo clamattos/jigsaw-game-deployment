@@ -15,7 +15,7 @@ DESAFIOS INTERATIVOS
 - Rabisco na mesa: "061983"
 - Rabisco lateral na mesa: “ddmmaaaa”
 
-**Resposta:** 19790312
+**Resposta:** 12031979
 
 ---
 
@@ -44,5 +44,5 @@ DESAFIOS INTERATIVOS
 - 🔐 **Gaveta trancada** (abre com uma chave):
   - Tabela manuscrita com proporções:  
     > “? + ? + ? → resultado verde claro e liberação da trava.”
-    
+
 **Resposta:** 1 - 3 - 5
