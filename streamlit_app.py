@@ -40,6 +40,13 @@ def load_oficina_and_personas(base_dir: str = "agents_description"):
 	base = Path(base_dir)
 	personas = {}
 	oficina_text = ""
+	# Prefer the specific Caroline file if present
+	preferred = base / "dra_caroline" / "oficina_sem_respostas.txt"
+	if preferred.exists():
+		try:
+			oficina_text = preferred.read_text(encoding="utf-8").strip()
+		except Exception:
+			pass
 	if not base.exists():
 		return oficina_text, personas
 
@@ -62,6 +69,29 @@ def load_oficina_and_personas(base_dir: str = "agents_description"):
 
 challenges = load_challenges()
 oficina_text, personas = load_oficina_and_personas()
+
+# Build challenge catalog from Oficina and optional challenges.json
+challenge_texts = {}
+if oficina_text:
+	pattern = re.compile(r"^\s*DESAFIO\s+\d+\s+—\s+.*", re.IGNORECASE)
+	lines = oficina_text.splitlines()
+	current_key = None
+	buf = []
+	for ln in lines:
+		if pattern.match(ln.strip()):
+			if current_key and buf:
+				challenge_texts[current_key] = "\n".join(buf).strip()
+			buf = []
+			current_key = ln.strip()
+		else:
+			buf.append(ln)
+	if current_key and buf:
+		challenge_texts[current_key] = "\n".join(buf).strip()
+challenge_keys = list(challenge_texts.keys())
+if not challenge_keys and challenges:
+	challenge_keys = [c["title"] for c in challenges]
+	for c in challenges:
+		challenge_texts[c["title"]] = c.get("description", "")
 
 @st.cache_data
 def load_respostas(path: str = "respostas.txt"):
@@ -162,45 +192,7 @@ with st.sidebar:
 		st.warning("⚠️ Select at least one agent!")
 	
 	st.divider()
-	st.subheader("🎯 Desafios")
-	# Build challenge list from oficina sections and optional challenges.json
-	challenge_texts = {}
-	# Extract sections from oficina by looking for lines starting with headings like DESAFIO N —
-	if oficina_text:
-		pattern = re.compile(r"^\s*DESAFIO\s+\d+\s+—\s+.*", re.IGNORECASE)
-		lines = oficina_text.splitlines()
-		current_key = None
-		buf = []
-		for ln in lines:
-			if pattern.match(ln.strip()):
-				# save previous
-				if current_key and buf:
-					challenge_texts[current_key] = "\n".join(buf).strip()
-				buf = []
-				current_key = ln.strip()
-			else:
-				buf.append(ln)
-		if current_key and buf:
-			challenge_texts[current_key] = "\n".join(buf).strip()
-	else:
-		st.caption("Oficina não encontrada em agents_description/*/oficina_sem_respostas.txt")
-
-	challenge_keys = list(challenge_texts.keys())
-	if not challenge_keys and challenges:
-		# fallback to challenges.json titles
-		challenge_keys = [c["title"] for c in challenges]
-		for c in challenges:
-			challenge_texts[c["title"]] = c.get("description", "")
-
-	selected_challenge_key = st.selectbox("Escolha o desafio", ["(texto livre)"] + challenge_keys)
-	if selected_challenge_key != "(texto livre)":
-		st.session_state.selected_challenge = {
-			"title": selected_challenge_key,
-			"category": "oficina",
-			"difficulty": "n/a",
-			"description": challenge_texts.get(selected_challenge_key, ""),
-		}
-		st.write(challenge_texts.get(selected_challenge_key, ""))
+	# Challenge selection moved next to target selector in main area
 
 	st.divider()
 	st.subheader("📚 Extra Challenges (optional)")
@@ -251,10 +243,25 @@ default_prompt = ""
 if "selected_challenge" in st.session_state:
 	default_prompt = st.session_state.selected_challenge['description']
 
-col_role, col_placeholder = st.columns([1, 3])
+col_role, col_chal = st.columns([1, 3])
 with col_role:
-	target = st.selectbox("Target", ["Gustavo", "Maya", "Dra. Caroline"], index=0)
-prompt = st.chat_input("Describe the puzzle…")
+	target = st.selectbox("Personagem", ["Gustavo", "Maya", "Dra. Caroline"], index=0)
+with col_chal:
+	selected_challenge_key = st.selectbox("Desafio", ["(texto livre)"] + challenge_keys)
+	if selected_challenge_key != "(texto livre)":
+		st.session_state.selected_challenge = {
+			"title": selected_challenge_key,
+			"category": "oficina",
+			"difficulty": "n/a",
+			"description": challenge_texts.get(selected_challenge_key, ""),
+		}
+		# Show the challenge as a message in chat area
+		if ("challenge_announced" not in st.session_state) or (st.session_state.get("announced_key") != selected_challenge_key):
+			st.session_state.messages.append(("assistant", f"### Desafio selecionado\n\n{selected_challenge_key}\n\n{challenge_texts.get(selected_challenge_key, '')}"))
+			st.session_state.challenge_announced = True
+			st.session_state.announced_key = selected_challenge_key
+
+prompt = st.chat_input("Escreva sua pergunta / resposta…")
 if prompt:
 	st.session_state.messages.append(("user", prompt))
 	with st.chat_message("user"):
