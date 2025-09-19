@@ -242,10 +242,7 @@ with st.sidebar:
 			"description": (entry or {}).get("description", ""),
 			"answer": (entry or {}).get("answer", ""),
 		}
-		if ("challenge_announced" not in st.session_state) or (st.session_state.get("announced_key") != selected_challenge_key):
-			st.session_state.messages.append(("assistant", f"### Desafio selecionado\n\n{selected_challenge_key}\n\n{st.session_state.selected_challenge['description']}"))
-			st.session_state.challenge_announced = True
-			st.session_state.announced_key = selected_challenge_key
+		# Não injetar mais a descrição no chat; será exibida na barra da direita
 
 	st.divider()
 	st.subheader("📚 Extra Challenges (optional)")
@@ -279,17 +276,47 @@ if "messages" not in st.session_state:
 
 # No details panel here anymore; challenge description is posted in chat when selected
 
-for role, content in st.session_state.messages:
-	with st.chat_message(role):
-		st.markdown(content)
+left_chat, right_panel = st.columns([2, 1], gap="large")
+
+with left_chat:
+    for role, content in st.session_state.messages:
+        with st.chat_message(role):
+            st.markdown(content)
 
 # Show an info if we parsed zero challenges from respostas.txt
 if not challenge_keys_ui:
     st.info("Nenhum desafio encontrado em respostas.txt. Verifique os títulos ('### DESAFIO N — ...').")
 
-col_role, _ = st.columns([1, 3])
-with col_role:
-	target = st.selectbox("Personagem", ["Gustavo", "Maya", "Dra. Caroline"], index=0)
+with right_panel:
+    st.subheader("📄 Desafio selecionado")
+    if "selected_challenge" in st.session_state:
+        ch = st.session_state.selected_challenge
+        st.markdown(f"**{ch['title']}**")
+        st.markdown(ch.get("description", ""))
+    else:
+        st.caption("Nenhum desafio selecionado.")
+
+    st.subheader("🎯 Tentar Resposta")
+    attempt = st.text_input("Resposta final:", key="attempt_text", placeholder="Ex: 19790312 ou 1-3-5")
+    if st.button("Verificar Resposta", type="primary"):
+        entry = None
+        if "selected_challenge" in st.session_state:
+            entry = respostas_map.get(normalize_challenge_key(st.session_state.selected_challenge.get("title", "")))
+        correct = (entry or {}).get("answer") if entry else None
+        def norm(s: str) -> str:
+            return re.sub(r"\s+", "", s or "").strip().lower()
+        if not correct:
+            st.warning("⚠️ Nenhum gabarito encontrado para o desafio selecionado.")
+        elif norm(attempt) == norm(correct):
+            st.success("✅ Resposta correta!")
+            st.balloons()
+        else:
+            st.error("❌ Resposta incorreta.")
+
+with left_chat:
+    col_role, _ = st.columns([1, 3])
+    with col_role:
+        target = st.selectbox("Personagem", ["Gustavo", "Maya", "Dra. Caroline"], index=0)
 
 prompt = st.chat_input("Escreva sua pergunta / resposta…")
 if prompt:
