@@ -88,7 +88,7 @@ if oficina_text:
 	buf = []
 	for ln in lines:
 		ls = ln.strip()
-		if re.match(r"^#{2,6}\\s+.*DESAFIO\\s+\\d+\\s+—\\s+.*$", ls, re.IGNORECASE):
+		if re.match(r".*DESAFIO\\s+\\d+\\s+—\\s+.*$", ls, re.IGNORECASE):
 			if current_display and buf:
 				challenge_texts[current_display] = "\n".join(buf).strip()
 				buf = []
@@ -107,8 +107,8 @@ def load_respostas(path: str = "respostas.txt"):
 		current_norm = None
 		for line in text.splitlines():
 			line_stripped = line.strip()
-			# Headings like '### 🎂 DESAFIO 1 — ...'
-			if re.match(r"^#{2,6}\\s+.*DESAFIO\\s+\\d+\\s+—\\s+.*$", line_stripped, re.IGNORECASE):
+			# Headings like '### 🎂 DESAFIO 1 — ...' (robust match)
+			if re.match(r".*DESAFIO\\s+\\d+\\s+—\\s+.*$", line_stripped, re.IGNORECASE):
 				current_norm = normalize_challenge_key(line_stripped)
 				continue
 			if current_norm and line_stripped.startswith("**Resposta:**"):
