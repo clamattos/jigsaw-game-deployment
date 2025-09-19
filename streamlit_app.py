@@ -243,10 +243,9 @@ for role, content in st.session_state.messages:
 	with st.chat_message(role):
 		st.markdown(content)
 
-# Auto-fill prompt if challenge is selected
-default_prompt = ""
-if "selected_challenge" in st.session_state:
-	default_prompt = st.session_state.selected_challenge['description']
+# Show an info if we parsed zero challenges
+if not challenge_keys:
+	st.info("Nenhum desafio detectado no arquivo de oficina. Verifique se os títulos começam com '###' e contêm 'DESAFIO N — ...'.")
 
 col_role, col_chal = st.columns([1, 3])
 with col_role:
