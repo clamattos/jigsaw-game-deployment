@@ -155,8 +155,10 @@ challenge_keys_ui = [e["title"] for e in respostas_entries]
 
 st.title("🧩 Jigsaw Room")
 
+# Main layout: sidebar with everything, main area with chat only
+main_col, sidebar_col = st.columns([3, 1])
 
-with st.sidebar:
+with sidebar_col:
 	st.subheader("Configuration")
 	st.text_input("AWS Region", key="cfg_region", value=REGION)
 	st.markdown("**Agents**")
@@ -231,7 +233,7 @@ with st.sidebar:
 		st.warning("⚠️ Select at least one agent!")
 	
 	st.divider()
-	st.subheader("🎯 Desafios (de respostas.txt)")
+	st.subheader("🎯 Desafios")
 	selected_challenge_key = st.selectbox("Desafio", ["(texto livre)"] + challenge_keys_ui)
 	if selected_challenge_key != "(texto livre)":
 		entry = respostas_map.get(normalize_challenge_key(selected_challenge_key))
@@ -242,7 +244,35 @@ with st.sidebar:
 			"description": (entry or {}).get("description", ""),
 			"answer": (entry or {}).get("answer", ""),
 		}
-		# Não injetar mais a descrição no chat; será exibida na barra da direita
+	
+	# Show challenge description in sidebar
+	if "selected_challenge" in st.session_state:
+		challenge = st.session_state.selected_challenge
+		st.markdown("---")
+		st.subheader("📄 Desafio Selecionado")
+		st.markdown(f"**{challenge['title']}**")
+		st.markdown(challenge.get("description", ""))
+	
+	# Manual answer attempt in sidebar
+	st.markdown("---")
+	st.subheader("🎯 Tentar Resposta")
+	attempt = st.text_input("Digite sua resposta final:", key="attempt_text_sidebar", placeholder="Ex: 19790312 ou 1-3-5")
+	if st.button("Verificar Resposta", type="primary", key="check_answer_sidebar"):
+		if "selected_challenge" in st.session_state:
+			entry = respostas_map.get(normalize_challenge_key(st.session_state.selected_challenge.get("title", "")))
+			correct = (entry or {}).get("answer") if entry else None
+			if not correct:
+				st.warning("⚠️ Nenhum gabarito encontrado para o desafio selecionado.")
+			else:
+				def norm(s: str) -> str:
+					return re.sub(r"\s+", "", s or "").strip().lower()
+				if norm(attempt) == norm(correct):
+					st.success("✅ **Resposta correta!** Parabéns!")
+					st.balloons()
+				else:
+					st.error(f"❌ **Resposta incorreta.** A resposta correta é: `{correct}`")
+		else:
+			st.warning("⚠️ Selecione um desafio primeiro.")
 
 	st.divider()
 	st.subheader("📚 Extra Challenges (optional)")
@@ -274,139 +304,82 @@ if "session_id" not in st.session_state:
 if "messages" not in st.session_state:
 	st.session_state.messages = []  # list of (role, content)
 
-# No details panel here anymore; challenge description is posted in chat when selected
-
-left_chat, right_panel = st.columns([2, 1], gap="large")
-
-with left_chat:
-    for role, content in st.session_state.messages:
-        with st.chat_message(role):
-            st.markdown(content)
-
 # Show an info if we parsed zero challenges from respostas.txt
 if not challenge_keys_ui:
     st.info("Nenhum desafio encontrado em respostas.txt. Verifique os títulos ('### DESAFIO N — ...').")
 
-with right_panel:
-    st.subheader("📄 Desafio selecionado")
-    if "selected_challenge" in st.session_state:
-        ch = st.session_state.selected_challenge
-        st.markdown(f"**{ch['title']}**")
-        st.markdown(ch.get("description", ""))
-    else:
-        st.caption("Nenhum desafio selecionado.")
+# Main chat area
+with main_col:
+    # Display chat messages
+    for role, content in st.session_state.messages:
+        with st.chat_message(role):
+            st.markdown(content)
 
-    st.subheader("🎯 Tentar Resposta")
-    attempt = st.text_input("Resposta final:", key="attempt_text", placeholder="Ex: 19790312 ou 1-3-5")
-    if st.button("Verificar Resposta", type="primary", key="check_answer_bottom"):
-        entry = None
-        if "selected_challenge" in st.session_state:
-            entry = respostas_map.get(normalize_challenge_key(st.session_state.selected_challenge.get("title", "")))
-        correct = (entry or {}).get("answer") if entry else None
-        def norm(s: str) -> str:
-            return re.sub(r"\s+", "", s or "").strip().lower()
-        if not correct:
-            st.warning("⚠️ Nenhum gabarito encontrado para o desafio selecionado.")
-        elif norm(attempt) == norm(correct):
-            st.success("✅ Resposta correta!")
-            st.balloons()
-        else:
-            st.error("❌ Resposta incorreta.")
-
-with left_chat:
+    # Character selection and chat input
     col_role, _ = st.columns([1, 3])
     with col_role:
         target = st.selectbox("Personagem", ["Gustavo", "Maya", "Dra. Caroline"], index=0)
 
-prompt = st.chat_input("Escreva sua pergunta / resposta…")
-if prompt:
-	st.session_state.messages.append(("user", prompt))
-	with st.chat_message("user"):
-		st.markdown(prompt)
+    prompt = st.chat_input("Escreva sua pergunta / resposta…")
+    if prompt:
+        st.session_state.messages.append(("user", prompt))
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-	# Build final prompt: selected challenge text plus user's message
-	base_text = ""
-	if "selected_challenge" in st.session_state:
-		base_text = st.session_state.selected_challenge.get("description", "")
-	enhanced_prompt = (base_text + "\n\nPergunta do jogador: " + prompt).strip()
-
-	# Invoke Bedrock Agent (non-streaming)
-	try:
-		if target == "Gustavo":
-			agent_id = st.session_state.get("gustavo_agent") or GUSTAVO_AGENT_ID
-			alias_id = st.session_state.get("gustavo_alias") or GUSTAVO_ALIAS_ID
-		elif target == "Maya":
-			agent_id = st.session_state.get("maya_agent") or MAYA_AGENT_ID
-			alias_id = st.session_state.get("maya_alias") or MAYA_ALIAS_ID
-		else:
-			agent_id = st.session_state.get("caroline_agent") or CAROLINE_AGENT_ID
-			alias_id = st.session_state.get("caroline_alias") or CAROLINE_ALIAS_ID
-
-		if not agent_id:
-			raise RuntimeError(f"Missing Agent ID for target: {target}")
-
-		# Use agent ID directly if no alias provided
-		if not alias_id:
-			alias_id = "TSTALIASID"  # Default alias for agents without custom aliases
-
-		resp = runtime.invoke_agent(
-			agentId=agent_id,
-			agentAliasId=alias_id,
-			sessionId=st.session_state.session_id,
-			inputText=enhanced_prompt,
-		)
-		chunks = []
-		for chunk in resp.get("completion", []):
-			if "chunk" in chunk and "bytes" in chunk["chunk"]:
-				chunks.append(chunk["chunk"]["bytes"].decode("utf-8"))
-		reply = "".join(chunks) if chunks else "(no reply)"
-	except Exception as e:
-		reply = f"Error: {e}"
-
-	# Validate against respostas.txt if a known challenge is selected
-	veredito = None
-	if "selected_challenge" in st.session_state:
-		challenge_title = st.session_state.selected_challenge.get("title", "")
-		gabarito = respostas.get(normalize_challenge_key(challenge_title))
-		if gabarito:
-			# normalize both strings (remove spaces/newlines/markdown)
-			def norm(s: str) -> str:
-				return re.sub(r"\s+", "", s or "").strip().lower()
-			if norm(reply).find(norm(gabarito)) != -1 or norm(reply) == norm(gabarito):
-				veredito = "✅ Resposta correta!"
-			else:
-				veredito = f"❌ Resposta incorreta."
-
-	final_block = reply if veredito is None else (reply + "\n\n" + veredito)
-	st.session_state.messages.append(("assistant", final_block))
-	with st.chat_message("assistant"):
-		st.markdown(final_block)
-
-st.markdown("---")
-
-# Manual answer attempt section
-st.subheader("🎯 Tentar Resposta")
-attempt = st.text_input("Digite sua resposta final:", key="attempt_text_right", placeholder="Ex: 19790312 ou 1-3-5")
-attempt = st.text_input("Digite sua resposta final:", key="attempt_text_bottom", placeholder="Ex: 19790312 ou 1-3-5")
-col1, col2 = st.columns([1, 4])
-with col1:
-    if st.button("Verificar Resposta", type="primary", key="check_answer_right_panel"):
+        # Build final prompt: selected challenge text plus user's message
+        base_text = ""
         if "selected_challenge" in st.session_state:
-            entry = respostas_map.get(normalize_challenge_key(st.session_state.selected_challenge.get("title", "")))
-            correct = (entry or {}).get("answer") if entry else None
-            if not correct:
-                st.warning("⚠️ Nenhum gabarito encontrado para o desafio selecionado.")
+            base_text = st.session_state.selected_challenge.get("description", "")
+        enhanced_prompt = (base_text + "\n\nPergunta do jogador: " + prompt).strip()
+
+        # Invoke Bedrock Agent (non-streaming)
+        try:
+            if target == "Gustavo":
+                agent_id = st.session_state.get("gustavo_agent") or GUSTAVO_AGENT_ID
+                alias_id = st.session_state.get("gustavo_alias") or GUSTAVO_ALIAS_ID
+            elif target == "Maya":
+                agent_id = st.session_state.get("maya_agent") or MAYA_AGENT_ID
+                alias_id = st.session_state.get("maya_alias") or MAYA_ALIAS_ID
             else:
+                agent_id = st.session_state.get("caroline_agent") or CAROLINE_AGENT_ID
+                alias_id = st.session_state.get("caroline_alias") or CAROLINE_ALIAS_ID
+
+            if not agent_id:
+                raise RuntimeError(f"Missing Agent ID for target: {target}")
+
+            # Use agent ID directly if no alias provided
+            if not alias_id:
+                alias_id = "TSTALIASID"  # Default alias for agents without custom aliases
+
+            resp = runtime.invoke_agent(
+                agentId=agent_id,
+                agentAliasId=alias_id,
+                sessionId=st.session_state.session_id,
+                inputText=enhanced_prompt,
+            )
+            chunks = []
+            for chunk in resp.get("completion", []):
+                if "chunk" in chunk and "bytes" in chunk["chunk"]:
+                    chunks.append(chunk["chunk"]["bytes"].decode("utf-8"))
+            reply = "".join(chunks) if chunks else "(no reply)"
+        except Exception as e:
+            reply = f"Error: {e}"
+
+        # Validate against respostas.txt if a known challenge is selected
+        veredito = None
+        if "selected_challenge" in st.session_state:
+            challenge_title = st.session_state.selected_challenge.get("title", "")
+            gabarito = respostas.get(normalize_challenge_key(challenge_title))
+            if gabarito:
+                # normalize both strings (remove spaces/newlines/markdown)
                 def norm(s: str) -> str:
                     return re.sub(r"\s+", "", s or "").strip().lower()
-                if norm(attempt) == norm(correct):
-                    st.success("✅ **Resposta correta!** Parabéns!")
-                    st.balloons()
+                if norm(reply).find(norm(gabarito)) != -1 or norm(reply) == norm(gabarito):
+                    veredito = "✅ Resposta correta!"
                 else:
-                    st.error(f"❌ **Resposta incorreta.** A resposta correta é: `{correct}`")
-        else:
-            st.warning("⚠️ Selecione um desafio primeiro.")
-with col2:
-    st.caption("Digite sua resposta e clique em 'Verificar Resposta' para saber se está correto.")
+                    veredito = f"❌ Resposta incorreta."
 
-st.caption("💡 **Dica:** Selecione o personagem e o desafio na barra lateral. O centro exibe apenas o chat e resultado.")
+        final_block = reply if veredito is None else (reply + "\n\n" + veredito)
+        st.session_state.messages.append(("assistant", final_block))
+        with st.chat_message("assistant"):
+            st.markdown(final_block)
