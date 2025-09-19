@@ -70,44 +70,49 @@ def load_oficina_and_personas(base_dir: str = "agents_description"):
 challenges = load_challenges()
 oficina_text, personas = load_oficina_and_personas()
 
-# Build challenge catalog from Oficina and optional challenges.json
+def normalize_challenge_key(title: str) -> str:
+	if not title:
+		return ""
+	# Strip heading hashes and emoji, then keep from 'DESAFIO ...'
+	clean = re.sub(r"^#+\\s+", "", title).strip()
+	i = clean.upper().find("DESAFIO")
+	core = clean[i:] if i != -1 else clean
+	core = re.sub(r"\s+", " ", core)
+	return core.strip()
+
+# Build challenge catalog from Oficina using heading lines like '### 🎂 DESAFIO 1 — ...'
 challenge_texts = {}
 if oficina_text:
-	pattern = re.compile(r"^\s*DESAFIO\s+\d+\s+—\s+.*", re.IGNORECASE)
 	lines = oficina_text.splitlines()
-	current_key = None
+	current_display = None
 	buf = []
 	for ln in lines:
-		if pattern.match(ln.strip()):
-			if current_key and buf:
-				challenge_texts[current_key] = "\n".join(buf).strip()
-			buf = []
-			current_key = ln.strip()
+		ls = ln.strip()
+		if re.match(r"^#{2,6}\\s+.*DESAFIO\\s+\\d+\\s+—\\s+.*$", ls, re.IGNORECASE):
+			if current_display and buf:
+				challenge_texts[current_display] = "\n".join(buf).strip()
+				buf = []
+			current_display = ls
 		else:
 			buf.append(ln)
-	if current_key and buf:
-		challenge_texts[current_key] = "\n".join(buf).strip()
+	if current_display and buf:
+		challenge_texts[current_display] = "\n".join(buf).strip()
 challenge_keys = list(challenge_texts.keys())
-if not challenge_keys and challenges:
-	challenge_keys = [c["title"] for c in challenges]
-	for c in challenges:
-		challenge_texts[c["title"]] = c.get("description", "")
 
 @st.cache_data
 def load_respostas(path: str = "respostas.txt"):
 	try:
 		text = Path(path).read_text(encoding="utf-8")
 		answers = {}
-		# Parse headings and **Resposta:** lines
-		current = None
+		current_norm = None
 		for line in text.splitlines():
 			line_stripped = line.strip()
-			m = re.match(r"^#+\s+.*DESAFIO\s+(\d+)\s+—\s+(.*)$", line_stripped, re.IGNORECASE)
-			if m:
-				current = f"DESAFIO {m.group(1)} — {m.group(2)}".strip()
+			# Headings like '### 🎂 DESAFIO 1 — ...'
+			if re.match(r"^#{2,6}\\s+.*DESAFIO\\s+\\d+\\s+—\\s+.*$", line_stripped, re.IGNORECASE):
+				current_norm = normalize_challenge_key(line_stripped)
 				continue
-			if current and line_stripped.startswith("**Resposta:**"):
-				answers[current] = line_stripped.split("**Resposta:**",1)[1].strip().strip("* ")
+			if current_norm and line_stripped.startswith("**Resposta:**"):
+				answers[current_norm] = line_stripped.split("**Resposta:**",1)[1].strip().strip("* ")
 		return answers
 	except Exception:
 		return {}
@@ -310,7 +315,7 @@ if prompt:
 	veredito = None
 	if "selected_challenge" in st.session_state:
 		challenge_title = st.session_state.selected_challenge.get("title", "")
-		gabarito = respostas.get(challenge_title)
+		gabarito = respostas.get(normalize_challenge_key(challenge_title))
 		if gabarito:
 			# normalize both strings (remove spaces/newlines/markdown)
 			def norm(s: str) -> str:
