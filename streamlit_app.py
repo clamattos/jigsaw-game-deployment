@@ -4,6 +4,7 @@ import boto3
 import streamlit as st
 import json
 from pathlib import Path
+import re
 
 st.set_page_config(page_title="Jigsaw Room", page_icon="🧩", layout="centered")
 
@@ -62,7 +63,29 @@ def load_oficina_and_personas(base_dir: str = "agents_description"):
 challenges = load_challenges()
 oficina_text, personas = load_oficina_and_personas()
 
+@st.cache_data
+def load_respostas(path: str = "respostas.txt"):
+	try:
+		text = Path(path).read_text(encoding="utf-8")
+		answers = {}
+		# Parse headings and **Resposta:** lines
+		current = None
+		for line in text.splitlines():
+			line_stripped = line.strip()
+			m = re.match(r"^#+\s+.*DESAFIO\s+(\d+)\s+—\s+(.*)$", line_stripped, re.IGNORECASE)
+			if m:
+				current = f"DESAFIO {m.group(1)} — {m.group(2)}".strip()
+				continue
+			if current and line_stripped.startswith("**Resposta:**"):
+				answers[current] = line_stripped.split("**Resposta:**",1)[1].strip().strip("* ")
+		return answers
+	except Exception:
+		return {}
+
+respostas = load_respostas()
+
 st.title("🧩 Jigsaw Room")
+
 
 with st.sidebar:
 	st.subheader("Configuration")
@@ -77,9 +100,9 @@ with st.sidebar:
 	st.caption("These can also be set via environment variables.")
 	
 	st.divider()
-	st.subheader("👥 Agents")
+	st.subheader("👥 Personagens")
 	
-	# Agent selection
+	# Agent selection (toggle-like checkboxes)
 	agents_info = {
 		"gustavo": {
 			"label": "Gustavo",
@@ -139,20 +162,45 @@ with st.sidebar:
 		st.warning("⚠️ Select at least one agent!")
 	
 	st.divider()
-	st.subheader("🎯 Challenge: Oficina")
+	st.subheader("🎯 Desafios")
+	# Build challenge list from oficina sections and optional challenges.json
+	challenge_texts = {}
+	# Extract sections from oficina by looking for lines starting with headings like DESAFIO N —
 	if oficina_text:
-		with st.expander("View challenge (oficina_sem_respostas)", expanded=False):
-			st.markdown(oficina_text)
-			if st.button("Load Oficina as prompt"):
-				st.session_state.selected_challenge = {
-					"title": "Oficina",
-					"category": "oficina",
-					"difficulty": "n/a",
-					"description": oficina_text,
-				}
-				st.rerun()
+		pattern = re.compile(r"^\s*DESAFIO\s+\d+\s+—\s+.*", re.IGNORECASE)
+		lines = oficina_text.splitlines()
+		current_key = None
+		buf = []
+		for ln in lines:
+			if pattern.match(ln.strip()):
+				# save previous
+				if current_key and buf:
+					challenge_texts[current_key] = "\n".join(buf).strip()
+				buf = []
+				current_key = ln.strip()
+			else:
+				buf.append(ln)
+		if current_key and buf:
+			challenge_texts[current_key] = "\n".join(buf).strip()
 	else:
-		st.caption("No oficina file found under agents_description/*/oficina_sem_respostas.txt")
+		st.caption("Oficina não encontrada em agents_description/*/oficina_sem_respostas.txt")
+
+	challenge_keys = list(challenge_texts.keys())
+	if not challenge_keys and challenges:
+		# fallback to challenges.json titles
+		challenge_keys = [c["title"] for c in challenges]
+		for c in challenges:
+			challenge_texts[c["title"]] = c.get("description", "")
+
+	selected_challenge_key = st.selectbox("Escolha o desafio", ["(texto livre)"] + challenge_keys)
+	if selected_challenge_key != "(texto livre)":
+		st.session_state.selected_challenge = {
+			"title": selected_challenge_key,
+			"category": "oficina",
+			"difficulty": "n/a",
+			"description": challenge_texts.get(selected_challenge_key, ""),
+		}
+		st.write(challenge_texts.get(selected_challenge_key, ""))
 
 	st.divider()
 	st.subheader("📚 Extra Challenges (optional)")
@@ -212,8 +260,11 @@ if prompt:
 	with st.chat_message("user"):
 		st.markdown(prompt)
 
-	# Send exactly the user's prompt (agents already contain their instructions and KBs)
-	enhanced_prompt = prompt
+	# Build final prompt: selected challenge text plus user's message
+	base_text = ""
+	if "selected_challenge" in st.session_state:
+		base_text = st.session_state.selected_challenge.get("description", "")
+	enhanced_prompt = (base_text + "\n\nPergunta do jogador: " + prompt).strip()
 
 	# Invoke Bedrock Agent (non-streaming)
 	try:
@@ -248,9 +299,24 @@ if prompt:
 	except Exception as e:
 		reply = f"Error: {e}"
 
-	st.session_state.messages.append(("assistant", reply))
+	# Validate against respostas.txt if a known challenge is selected
+	veredito = None
+	if "selected_challenge" in st.session_state:
+		challenge_title = st.session_state.selected_challenge.get("title", "")
+		gabarito = respostas.get(challenge_title)
+		if gabarito:
+			# normalize both strings (remove spaces/newlines/markdown)
+			def norm(s: str) -> str:
+				return re.sub(r"\s+", "", s or "").strip().lower()
+			if norm(reply).find(norm(gabarito)) != -1 or norm(reply) == norm(gabarito):
+				veredito = "✅ Resposta correta!"
+			else:
+				veredito = f"❌ Resposta incorreta."
+
+	final_block = reply if veredito is None else (reply + "\n\n" + veredito)
+	st.session_state.messages.append(("assistant", final_block))
 	with st.chat_message("assistant"):
-		st.markdown(reply)
+		st.markdown(final_block)
 
 st.markdown("---")
 st.caption("Tip: Select which agents to include in the sidebar. Configure your supervisor agent and alias there too. Your session is preserved until refresh.")
