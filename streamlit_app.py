@@ -386,7 +386,8 @@ st.markdown("---")
 
 # Manual answer attempt section
 st.subheader("🎯 Tentar Resposta")
-attempt = st.text_input("Digite sua resposta final:", key="attempt_text", placeholder="Ex: 19790312 ou 1-3-5")
+attempt = st.text_input("Digite sua resposta final:", key="attempt_text_right", placeholder="Ex: 19790312 ou 1-3-5")
+attempt = st.text_input("Digite sua resposta final:", key="attempt_text_bottom", placeholder="Ex: 19790312 ou 1-3-5")
 col1, col2 = st.columns([1, 4])
 with col1:
     if st.button("Verificar Resposta", type="primary"):
